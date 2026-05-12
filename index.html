@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>杭州西湖数字孪生交互系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; font-family: "Microsoft YaHei", sans-serif; }
+        #canvas-container { width: 100vw; height: 100vh; }
+
+        #info-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            min-width: 280px;
+            font-size: 14px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        #info-panel h1 {
+            font-size: 22px;
+            margin-bottom: 10px;
+            color: #4fc3f7;
+        }
+        #info-panel .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        #info-panel .stat-item {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 12px;
+            border-radius: 5px;
+        }
+        #info-panel .stat-label { font-size: 11px; color: #aaa; }
+        #info-panel .stat-value { font-size: 16px; font-weight: bold; color: #4fc3f7; }
+
+        #control-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            padding: 15px 25px;
+            border-radius: 30px;
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+        .control-btn {
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .control-btn:hover { background: #4fc3f7; color: #000; }
+        .control-btn.active { background: #4fc3f7; color: #000; }
+
+        #poi-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            min-width: 200px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+        #poi-panel h3 { margin-bottom: 10px; color: #4fc3f7; font-size: 14px; }
+        .poi-item {
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 4px 0;
+            transition: background 0.2s;
+            font-size: 13px;
+        }
+        .poi-item:hover { background: rgba(79, 195, 247, 0.3); }
+
+        #loading {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #1a1a2e;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: #fff;
+        }
+        #loading h2 { margin-bottom: 20px; }
+        .loader {
+            width: 50px; height: 50px;
+            border: 3px solid rgba(79, 195, 247, 0.3);
+            border-top-color: #4fc3f7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <h2>杭州西湖数字孪生系统</h2>
+        <div class="loader"></div>
+        <p style="margin-top:20px">加载中...</p>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <div id="info-panel">
+        <h1>杭州西湖</h1>
+        <p>数字孪生交互系统 | Digital Twin System</p>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-label">游览人数</div>
+                <div class="stat-value" id="visitor-count">12,847</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">气温</div>
+                <div class="stat-value" id="temperature">24°C</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">天气</div>
+                <div class="stat-value" id="weather">晴</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">空气质量</div>
+                <div class="stat-value" id="aqi">良</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="poi-panel">
+        <h3>景点列表</h3>
+        <div class="poi-item" data-poi="baidi">白堤</div>
+        <div class="poi-item" data-poi="sudi">苏堤</div>
+        <div class="poi-item" data-poi="duanqiao">断桥</div>
+        <div class="poi-item" data-poi="leifeng">雷峰塔</div>
+        <div class="poi-item" data-poi="lingyin">灵隐寺</div>
+        <div class="poi-item" data-poi="huachi">花港观鱼</div>
+        <div class="poi-item" data-poi="nanping">南屏晚钟</div>
+    </div>
+
+    <div id="control-panel">
+        <button class="control-btn active" data-mode="orbit">轨道视角</button>
+        <button class="control-btn" data-mode="fly">飞行视角</button>
+        <button class="control-btn" data-mode="top">俯视视角</button>
+        <button class="control-btn" id="reset-btn">重置视角</button>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module" src="main.js"></script>
+</body>
+</html>
