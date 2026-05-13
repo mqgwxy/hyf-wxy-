@@ -1,0 +1,12 @@
+{
+  "name": "westlake-digital-twin",
+  "version": "1.0.0",
+  "description": "杭州西湖数字孪生交互系统 - 浙江树人学院期中作业",
+  "type": "module",
+  "scripts": {
+    "generate-models": "node tools/generate-models.mjs"
+  },
+  "devDependencies": {
+    "three": "^0.160.0"
+  }
+}

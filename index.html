@@ -6,163 +6,181 @@
     <title>杭州西湖数字孪生交互系统</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { overflow: hidden; font-family: "Microsoft YaHei", sans-serif; }
-        #canvas-container { width: 100vw; height: 100vh; }
+        body { overflow: hidden; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #0a0a1a; }
+        #canvas-container { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1; }
 
+        /* ========== 信息面板 ========== */
         #info-panel {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.75);
-            color: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            min-width: 280px;
-            font-size: 14px;
-            z-index: 100;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
+            position: fixed; top: 20px; left: 20px; z-index: 100;
+            background: rgba(10, 15, 30, 0.85); color: #e0e8f0;
+            padding: 18px 20px; border-radius: 12px; min-width: 260px;
+            backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.12);
+            font-size: 13px; transition: all 0.3s;
         }
-        #info-panel h1 {
-            font-size: 22px;
-            margin-bottom: 10px;
-            color: #4fc3f7;
-        }
-        #info-panel .stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-top: 15px;
-        }
-        #info-panel .stat-item {
-            background: rgba(255,255,255,0.1);
-            padding: 8px 12px;
-            border-radius: 5px;
-        }
-        #info-panel .stat-label { font-size: 11px; color: #aaa; }
-        #info-panel .stat-value { font-size: 16px; font-weight: bold; color: #4fc3f7; }
+        #info-panel h1 { font-size: 20px; margin-bottom: 4px; color: #5ec5f0; letter-spacing: 2px; }
+        #info-panel .subtitle { font-size: 11px; color: #8899aa; margin-bottom: 10px; }
+        #info-panel .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        #info-panel .stat-item { background: rgba(255,255,255,0.06); padding: 6px 10px; border-radius: 6px; }
+        #info-panel .stat-label { font-size: 10px; color: #7799aa; }
+        #info-panel .stat-value { font-size: 15px; font-weight: bold; color: #5ec5f0; }
 
-        #control-panel {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.75);
-            color: #fff;
-            padding: 15px 25px;
-            border-radius: 30px;
-            display: flex;
-            gap: 15px;
-            z-index: 100;
-            backdrop-filter: blur(10px);
+        /* ========== 弹出详情卡片 ========== */
+        #detail-card {
+            position: fixed; z-index: 200; display: none;
+            background: rgba(20, 30, 50, 0.92); color: #e0e8f0;
+            padding: 16px 20px; border-radius: 12px; min-width: 240px; max-width: 320px;
+            backdrop-filter: blur(20px); border: 1px solid rgba(94, 197, 240, 0.3);
+            pointer-events: none; font-size: 13px; line-height: 1.6;
         }
-        .control-btn {
-            background: rgba(255,255,255,0.15);
-            border: none;
-            color: #fff;
-            padding: 10px 20px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: all 0.3s;
-        }
-        .control-btn:hover { background: #4fc3f7; color: #000; }
-        .control-btn.active { background: #4fc3f7; color: #000; }
+        #detail-card.visible { display: block; }
+        #detail-card h3 { color: #5ec5f0; font-size: 16px; margin-bottom: 6px; }
+        #detail-card .detail-tag { display: inline-block; background: rgba(94,197,240,0.15); color: #5ec5f0; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin: 2px; }
 
+        /* ========== 图层控制面板 ========== */
+        #layer-panel {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 100;
+            display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+        }
+        #layer-panel button, #control-panel button {
+            background: rgba(20, 30, 55, 0.82); border: 1px solid rgba(255,255,255,0.15);
+            color: #ccd6e0; padding: 8px 16px; border-radius: 22px; cursor: pointer;
+            font-size: 12px; transition: all 0.25s; backdrop-filter: blur(10px);
+            white-space: nowrap;
+        }
+        #layer-panel button:hover, #control-panel button:hover {
+            background: rgba(94, 197, 240, 0.2); border-color: #5ec5f0; color: #fff;
+        }
+        #layer-panel button.on { background: #5ec5f0; border-color: #5ec5f0; color: #0a0a1a; font-weight: bold; }
+
+        /* ========== 顶部工具栏 ========== */
+        #toolbar {
+            position: fixed; top: 20px; right: 20px; z-index: 100;
+            display: flex; flex-direction: column; gap: 6px;
+        }
+        #toolbar button {
+            background: rgba(20, 30, 55, 0.82); border: 1px solid rgba(255,255,255,0.12);
+            color: #ccd6e0; padding: 10px 14px; border-radius: 8px; cursor: pointer;
+            font-size: 12px; transition: all 0.25s; backdrop-filter: blur(10px);
+        }
+        #toolbar button:hover { background: rgba(94,197,240,0.2); border-color: #5ec5f0; }
+        #toolbar button.active { background: #5ec5f0; border-color: #5ec5f0; color: #0a0a1a; }
+
+        /* ========== 景点列表 ========== */
         #poi-panel {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.75);
-            color: #fff;
-            padding: 15px;
-            border-radius: 10px;
-            min-width: 200px;
-            z-index: 100;
-            backdrop-filter: blur(10px);
+            position: fixed; top: 20px; right: 120px; z-index: 100;
+            background: rgba(10, 15, 30, 0.85); color: #e0e8f0;
+            padding: 14px 16px; border-radius: 10px; min-width: 160px;
+            backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.12);
         }
-        #poi-panel h3 { margin-bottom: 10px; color: #4fc3f7; font-size: 14px; }
+        #poi-panel h3 { font-size: 13px; margin-bottom: 8px; color: #5ec5f0; }
         .poi-item {
-            padding: 8px;
-            cursor: pointer;
-            border-radius: 5px;
-            margin: 4px 0;
-            transition: background 0.2s;
-            font-size: 13px;
+            padding: 6px 10px; cursor: pointer; border-radius: 5px;
+            margin: 2px 0; font-size: 12px; transition: all 0.2s;
         }
-        .poi-item:hover { background: rgba(79, 195, 247, 0.3); }
+        .poi-item:hover { background: rgba(94, 195, 240, 0.25); color: #fff; }
 
+        /* ========== 键盘提示 ========== */
+        #key-hints {
+            position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 100;
+            display: flex; gap: 12px; font-size: 10px; color: #556677;
+        }
+        #key-hints kbd {
+            background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 3px;
+            border: 1px solid rgba(255,255,255,0.1); font-family: monospace; color: #8899aa;
+        }
+
+        /* ========== 加载屏 ========== */
         #loading {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: #1a1a2e;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            color: #fff;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: #0a0f1e; display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            z-index: 1000; color: #e0e8f0;
         }
-        #loading h2 { margin-bottom: 20px; }
-        .loader {
-            width: 50px; height: 50px;
-            border: 3px solid rgba(79, 195, 247, 0.3);
-            border-top-color: #4fc3f7;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
+        #loading .loader { width: 44px; height: 44px; border: 3px solid rgba(94,197,240,0.2); border-top-color: #5ec5f0; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        #loading p { margin-top: 16px; font-size: 13px; color: #8899aa; }
+
+        /* ========== 响应式 ========== */
+        @media (max-width: 768px) {
+            #poi-panel { right: 10px; top: auto; bottom: 140px; min-width: 130px; }
+            #toolbar { right: 10px; top: 10px; }
+            #layer-panel button, #control-panel button { padding: 6px 10px; font-size: 10px; }
+            #info-panel { left: 8px; top: 8px; min-width: 200px; padding: 12px; }
+        }
     </style>
 </head>
 <body>
     <div id="loading">
-        <h2>杭州西湖数字孪生系统</h2>
+        <h2 style="letter-spacing:3px;">杭州西湖数字孪生系统</h2>
         <div class="loader"></div>
-        <p style="margin-top:20px">加载中...</p>
+        <p>场景加载中...</p>
     </div>
 
     <div id="canvas-container"></div>
 
+    <!-- 左上：信息面板 -->
     <div id="info-panel">
         <h1>杭州西湖</h1>
-        <p>数字孪生交互系统 | Digital Twin System</p>
+        <p class="subtitle">West Lake Digital Twin | 浙江树人学院</p>
         <div class="stats">
-            <div class="stat-item">
-                <div class="stat-label">游览人数</div>
-                <div class="stat-value" id="visitor-count">12,847</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">气温</div>
-                <div class="stat-value" id="temperature">24°C</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">天气</div>
-                <div class="stat-value" id="weather">晴</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">空气质量</div>
-                <div class="stat-value" id="aqi">良</div>
-            </div>
+            <div class="stat-item"><div class="stat-label">🏛 今日游客</div><div class="stat-value" id="visitor-count">12,847</div></div>
+            <div class="stat-item"><div class="stat-label">🌡 气温</div><div class="stat-value" id="temperature">24°C</div></div>
+            <div class="stat-item"><div class="stat-label">☀ 天气</div><div class="stat-value" id="weather">晴</div></div>
+            <div class="stat-item"><div class="stat-label">🍃 空气</div><div class="stat-value" id="aqi">良</div></div>
         </div>
     </div>
 
+    <!-- 右上：景点列表 -->
     <div id="poi-panel">
-        <h3>景点列表</h3>
-        <div class="poi-item" data-poi="baidi">白堤</div>
-        <div class="poi-item" data-poi="sudi">苏堤</div>
-        <div class="poi-item" data-poi="duanqiao">断桥</div>
-        <div class="poi-item" data-poi="leifeng">雷峰塔</div>
-        <div class="poi-item" data-poi="lingyin">灵隐寺</div>
-        <div class="poi-item" data-poi="huachi">花港观鱼</div>
-        <div class="poi-item" data-poi="nanping">南屏晚钟</div>
+        <h3>📍 景点导航</h3>
+        <div class="poi-item" data-poi="leifeng">🗼 雷峰塔</div>
+        <div class="poi-item" data-poi="santanyinyue">🏝 三潭印月</div>
+        <div class="poi-item" data-poi="gushan">⛰ 孤山</div>
+        <div class="poi-item" data-poi="duanqiao">🌉 断桥残雪</div>
+        <div class="poi-item" data-poi="quyuan">🪷 曲院风荷</div>
+        <div class="poi-item" data-poi="sudi">🛤 苏堤</div>
+        <div class="poi-item" data-poi="baidi">🛤 白堤</div>
+        <div class="poi-item" data-poi="lingyin">🛕 灵隐寺</div>
+        <div class="poi-item" data-poi="huachi">🐟 花港观鱼</div>
+        <div class="poi-item" data-poi="nanping">🔔 南屏晚钟</div>
     </div>
 
-    <div id="control-panel">
-        <button class="control-btn active" data-mode="orbit">轨道视角</button>
-        <button class="control-btn" data-mode="fly">飞行视角</button>
-        <button class="control-btn" data-mode="top">俯视视角</button>
-        <button class="control-btn" id="reset-btn">重置视角</button>
+    <!-- 右工具栏 -->
+    <div id="toolbar">
+        <button id="btn-daynight" title="切换昼夜 (D键)">🌙 昼夜切换</button>
+        <button id="btn-wireframe" title="线框模式 (W键)">📐 线框模式</button>
+        <button id="btn-export-glb" title="导出当前场景模型为GLB (E键)">💾 导出GLB</button>
     </div>
+
+    <!-- 底部图层 -->
+    <div id="layer-panel">
+        <button class="on" data-layer="buildings">🏗 建筑</button>
+        <button class="on" data-layer="vegetation">🌳 植被</button>
+        <button class="on" data-layer="water">💧 水域</button>
+        <button class="on" data-layer="terrain">⛰ 地形</button>
+        <button class="on" data-layer="labels">📍 标注</button>
+    </div>
+
+    <!-- 底部视角 -->
+    <div style="position:fixed;bottom:75px;left:50%;transform:translateX(-50%);z-index:100;display:flex;gap:6px;">
+        <button class="control-btn active" data-mode="orbit" style="background:rgba(20,30,55,0.82);border:1px solid rgba(255,255,255,0.15);color:#ccd6e0;padding:6px 14px;border-radius:18px;cursor:pointer;font-size:11px;">🎯 自由轨道</button>
+        <button class="control-btn" data-mode="fly" style="background:rgba(20,30,55,0.82);border:1px solid rgba(255,255,255,0.15);color:#ccd6e0;padding:6px 14px;border-radius:18px;cursor:pointer;font-size:11px;">🕊 飞行鸟瞰</button>
+        <button class="control-btn" data-mode="top" style="background:rgba(20,30,55,0.82);border:1px solid rgba(255,255,255,0.15);color:#ccd6e0;padding:6px 14px;border-radius:18px;cursor:pointer;font-size:11px;">📐 正俯视图</button>
+        <button id="reset-btn" style="background:rgba(20,30,55,0.82);border:1px solid rgba(255,255,255,0.15);color:#ccd6e0;padding:6px 14px;border-radius:18px;cursor:pointer;font-size:11px;">🔄 重置</button>
+    </div>
+
+    <!-- 键盘快捷键提示 -->
+    <div id="key-hints">
+        <span><kbd>1-5</kbd> 图层</span>
+        <span><kbd>W</kbd> 线框</span>
+        <span><kbd>D</kbd> 昼夜</span>
+        <span><kbd>R</kbd> 重置</span>
+        <span><kbd>E</kbd> 导出</span>
+        <span>🖱 拖拽/滚轮</span>
+    </div>
+
+    <!-- 弹出详情卡 -->
+    <div id="detail-card"><h3></h3><p class="detail-desc"></p><div class="detail-tags"></div></div>
 
     <script type="importmap">
     {
