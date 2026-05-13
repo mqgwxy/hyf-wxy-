@@ -769,16 +769,18 @@ function createLeifengPagoda() {
     const copperMat = new THREE.MeshStandardMaterial({ color: 0xB87333, roughness: 0.35, metalness: 0.7 });
     const roofMat = new THREE.MeshStandardMaterial({ color: 0xA0622E, roughness: 0.3, metalness: 0.6 });
     const goldMat = new THREE.MeshStandardMaterial({ color: 0xFFD700, roughness: 0.15, metalness: 0.9 });
-    allMaterials.push(copperMat, roofMat, goldMat);
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0x8B6914, roughness: 0.75 });
+    const platMat = new THREE.MeshStandardMaterial({ color: 0x8B7355, roughness: 0.8 });
+    allMaterials.push(copperMat, roofMat, goldMat, floorMat, platMat);
 
     const br = 9, fh = 6, n = 5;
 
     // 台基
-    const plat = new THREE.Mesh(new THREE.CylinderGeometry(br + 1.5, br + 2, 6, 8), new THREE.MeshStandardMaterial({ color: 0x8B7355, roughness: 0.8 }));
+    const plat = new THREE.Mesh(new THREE.CylinderGeometry(br + 1.5, br + 2, 6, 8), platMat);
     plat.position.y = 3; plat.castShadow = true; plat.receiveShadow = true;
     g.add(plat);
 
-    // 玻璃罩
+    // 玻璃罩（地宫遗址展示）
     const glassMat = new THREE.MeshStandardMaterial({ color: 0x88CCFF, transparent: true, opacity: 0.25, roughness: 0.08, metalness: 0.15 });
     const glass = new THREE.Mesh(new THREE.BoxGeometry(br * 2.5, 4, br * 2.5), glassMat);
     glass.position.y = 2;
@@ -788,7 +790,14 @@ function createLeifengPagoda() {
     for (let i = 0; i < n; i++) {
         const fy = 6 + i * fh;
         const r = br - i * 1.2;
-        const body = new THREE.Mesh(new THREE.CylinderGeometry(r, r + 0.2, fh * 0.65, 8), copperMat);
+
+        // 楼板（解决塔内中空问题）
+        const floorDisc = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.25, 16), floorMat);
+        floorDisc.position.y = fy - fh * 0.25;
+        floorDisc.receiveShadow = true;
+        g.add(floorDisc);
+
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(r, r + 0.2, fh, 8), copperMat);
         body.position.y = fy; body.castShadow = true;
         g.add(body);
 
@@ -822,7 +831,7 @@ function createLeifengPagoda() {
     g.add(new THREE.Mesh(new THREE.ConeGeometry(0.35, 2.4, 8), goldMat)).position.y = sby + 2.5;
     g.add(new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), goldMat)).position.y = sby + 4.0;
 
-    g.position.set(pos.x, pos.y, pos.z);
+    g.position.set(pos.x, 0, pos.z); // 塔底贴地，之前误用pos.y=48导致悬浮
     layers.buildings.add(g);
     buildingRefs.push({ mesh: g, data: LANDMARKS.leifeng });
 }
@@ -965,7 +974,7 @@ function createLabels() {
             new THREE.SphereGeometry(2.5, 16, 16),
             new THREE.MeshBasicMaterial({ color: 0xFF4500, transparent: true, opacity: 0.7, depthTest: false })
         );
-        marker.position.set(data.x, key === 'leifeng' ? 52 : 20, data.z);
+        marker.position.set(data.x, key === 'leifeng' ? 42 : 20, data.z);
         marker.name = `label-${key}`;
         layers.labels.add(marker);
     });
@@ -1148,7 +1157,7 @@ function flyToPoi(key) {
     const px = d.x + (key === 'leifeng' ? 80 : 60);
     const py = key === 'leifeng' ? 80 : 50;
     const pz = d.z + 60;
-    animateCamera(px, py, pz, d.x, key === 'leifeng' ? 40 : 5, d.z);
+    animateCamera(px, py, pz, d.x, key === 'leifeng' ? 20 : 5, d.z);
 }
 
 // ==================== 图层控制 ====================
